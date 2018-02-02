@@ -19,6 +19,8 @@ namespace RewrapExample
             string shouldSeed = Environment.GetEnvironmentVariable("SHOULD_SEED_USERS");
             string numRecords = Environment.GetEnvironmentVariable("NUMBER_SEED_USERS");
 
+            Console.WriteLine("Connecting to Vault server...");
+
             // initialize Vault client
             if (null == client)
             {
@@ -32,6 +34,7 @@ namespace RewrapExample
             }
 
             // get latest key version and rewrap if necessary
+            Console.WriteLine("Moving rewrap...");
             RewrapAsync().GetAwaiter().GetResult();
         }
 
@@ -49,7 +52,6 @@ namespace RewrapExample
             WebHelper.ApiResults apiResults = await WebHelper.GetUserRecordsAsync(numRecords);
             var tasks = new List<Task>();
             foreach (var record in apiResults.Records) {
-                Console.WriteLine(record.Name.First);
                 ICollection<Task> encryptValues = new List<Task>();
                 record.DOB = await client.EncryptValue(record.DOB);
                 record.Location.Street = await client.EncryptValue(record.Location.Street);
@@ -60,12 +62,12 @@ namespace RewrapExample
             
         }
         static async Task RewrapAsync() {
-            
             int v = await client.GetLatestTransitKeyVersion();
+            Console.WriteLine($"Current Key Version: {v}");
             List<Record> users = await DBHelper.FindRecordsToRewrap(v);
             Console.WriteLine($"Found {users.Count} records to rewrap.");
             await client.ReWrapRecords(users);
-            Console.WriteLine($"Version: {v}");
+            
         }
     }
 }

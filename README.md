@@ -52,3 +52,7 @@ You can inspect the contents of the database with:
 ```
 docker exec -it mysql-transit mysql -uroot -proot
 ```
+
+##### Caveats
+
+This application was written primarily to demonstrate a process in Vault.  I am not a professional .NET developer and as such their may be issues with the application.  If you choose to use any of this code please do so with care.    

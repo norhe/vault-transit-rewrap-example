@@ -94,7 +94,7 @@ namespace RewrapExample
                     
                     cmd.CommandText = command;
 
-                    var rowsAffected = cmd.ExecuteNonQueryAsync();
+                    await cmd.ExecuteNonQueryAsync();
                 }
             }
         }
