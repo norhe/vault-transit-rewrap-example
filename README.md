@@ -8,6 +8,8 @@ Data encrypted by transit is prepended with the version of the key used.
 
 ## Usage
 
+
+#### Database
 You need a database to test with.  You can create one easily using Docker:
 
 ```
@@ -24,6 +26,7 @@ docker run --name mysql-rewrap \
   -d mysql/mysql-server:5.7
 ```
 
+#### Vault
 To configure Vault:
 
 ```
@@ -36,14 +39,14 @@ vault write -f transit/keys/my_app_key
 Please note that the above command runs Vault in dev mode which means that secrets will not be persisted to disk.  If you stop the Vault process you will not be able to read records saved using any keys it created.  You will need to wipe the records from the database, and begin testing with new records.  
 
 
-REPLACE TEXT
-You then need to run the app:
+#### Application
+You then need to run the app.  The token, location, and name of the transit key to rewrap are accessed using environment variables:
 
 ```
-VAULT_TOKEN=root go run main.go
+VAULT_TOKEN=root VAULT_ADDR=http://localhost:8200 VAULT_TRANSIT_KEY=my_app_key SHOULD_SEED_USERS=true dotnet run
 ```
 
-You can then view the app using a browser at http://localhost:1234.
+If you need to seed test data you can do so by including the SHOULD_SEED_USERS=true.  Though this is just an example th
 
 You can inspect the contents of the database with:
 ```

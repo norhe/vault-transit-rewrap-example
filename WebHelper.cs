@@ -17,16 +17,16 @@ namespace RewrapExample
             public IEnumerable<Record> Records { get; set; }
         }
 
-        public static async Task<ApiResults> GetUserRecordsAsync()
+        public static async Task<ApiResults> GetUserRecordsAsync(string numRecords)
         {
+            var n = null == numRecords ? "500" : numRecords; 
             string baseUrl = "https://randomuser.me";
-            WebHelper.client.BaseAddress = new Uri(baseUrl);
+            string query = "/api/?results=" + n + "&nat=us";
+            //WebHelper.client.BaseAddress = new Uri(baseUrl);
             WebHelper.client.DefaultRequestHeaders.Accept.Clear();
             WebHelper.client.DefaultRequestHeaders.Accept.Add(
                 new MediaTypeWithQualityHeaderValue("application/json")
             );    
-            //Console.WriteLine($"Connecting to ")
-            string query = "/api/?results=10&nat=us";
             
             ApiResults records = null;
             HttpResponseMessage response = await client.GetAsync(baseUrl + query);
