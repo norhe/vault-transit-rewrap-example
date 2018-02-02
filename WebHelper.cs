@@ -21,7 +21,7 @@ namespace RewrapExample
         {
             var n = null == numRecords ? "500" : numRecords; 
             string baseUrl = "https://randomuser.me";
-            string query = "/api/?results=" + n + "&nat=us";
+            string query = $"/api/?results={n}&nat=us";
             //WebHelper.client.BaseAddress = new Uri(baseUrl);
             WebHelper.client.DefaultRequestHeaders.Accept.Clear();
             WebHelper.client.DefaultRequestHeaders.Accept.Add(

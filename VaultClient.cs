@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using VaultSharp;
@@ -39,18 +40,46 @@ namespace RewrapExample
         // not currently supported by the VaultSharp client.  You can specify things like
         // alternate mount point, context for derived keys, etc.  Please see the documentation:
         // https://github.com/rajanadar/VaultSharp
-        public async Task ReWrapValue(string ciphertext)
+        public async Task<string> ReWrapValue(string ciphertext)
         {
-            await client.TransitRewrapWithLatestEncryptionKeyAsync(transitKeyName, ciphertext);
+            //Console.WriteLine($"Rewrapping {ciphertext}");
+            //var result = await client.TransitRewrapWithLatestEncryptionKeyAsync(transitKeyName, base64(ciphertext));
+            var result = await client.TransitRewrapWithLatestEncryptionKeyAsync(transitKeyName, ciphertext);
+            return result.Data.CipherText;
+        }
+
+        private string base64(string value)
+        {
+            byte[] bytes = Encoding.UTF8.GetBytes(value);
+            return Convert.ToBase64String(bytes);
         }
 
         // encrypt data, required for seeding 
         public async Task<string> EncryptValue(string plainText)
         {
-            byte[] bytes = Encoding.UTF8.GetBytes(plainText);
-            string b64encoded = Convert.ToBase64String(bytes);
-            var ciphertext = await client.TransitEncryptAsync(transitKeyName, b64encoded);
+            var ciphertext = await client.TransitEncryptAsync(transitKeyName, base64(plainText));
             return ciphertext.Data.CipherText;
         }  
+        
+        public async Task ReWrapRecords(ICollection<Record> users)
+        {
+            int count = 0;
+            ICollection<Task> tasks = new  List<Task>();
+            foreach (Record user in users)
+            {
+                count++;
+                user.Location.Street = await ReWrapValue(user.Location.Street);
+                user.DOB = await ReWrapValue(user.DOB);
+                user.Email = await ReWrapValue(user.Email);
+                
+                tasks.Add(DBHelper.UpdateRecordAsyc(user));
+                if (count % 10 == 0) 
+                {
+                    Console.WriteLine($"Wrapped another 10 records: {count} so far...");
+                    await Task.WhenAll();
+                }
+            }
+            await Task.WhenAll(tasks);
+        }
     }
 }

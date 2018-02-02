@@ -12,26 +12,27 @@ namespace RewrapExample
         static VaultClient client = null;
         static void Main(string[] args)
         {
-            //RunAsync().GetAwaiter().GetResult();
             // Get our env vars
-
             string vaultUri = Environment.GetEnvironmentVariable("VAULT_ADDR");
             string token = Environment.GetEnvironmentVariable("VAULT_TOKEN");
             string transitKeyName = Environment.GetEnvironmentVariable("VAULT_TRANSIT_KEY");
             string shouldSeed = Environment.GetEnvironmentVariable("SHOULD_SEED_USERS");
             string numRecords = Environment.GetEnvironmentVariable("NUMBER_SEED_USERS");
 
+            // initialize Vault client
             if (null == client)
             {
                 client = new VaultClient(vaultUri, token, transitKeyName);
             }
 
+            // seed the database with random user records if necessary
             if (null != shouldSeed) {
                 SeedDB(numRecords).GetAwaiter().GetResult();
                 Console.WriteLine("Seeded the database...");
             }
 
-            RunAsync().GetAwaiter().GetResult();
+            // get latest key version and rewrap if necessary
+            RewrapAsync().GetAwaiter().GetResult();
         }
 
         static async Task InitDBAsync()
@@ -51,16 +52,19 @@ namespace RewrapExample
                 Console.WriteLine(record.Name.First);
                 ICollection<Task> encryptValues = new List<Task>();
                 record.DOB = await client.EncryptValue(record.DOB);
-                record.Phone = await client.EncryptValue(record.Phone);
+                record.Location.Street = await client.EncryptValue(record.Location.Street);
                 record.Email = await client.EncryptValue(record.Email);
                 tasks.Add(DBHelper.InsertRecordAsyc(record));
             }
             await Task.WhenAll(tasks);
             
         }
-        static async Task RunAsync() {
+        static async Task RewrapAsync() {
             
             int v = await client.GetLatestTransitKeyVersion();
+            List<Record> users = await DBHelper.FindRecordsToRewrap(v);
+            Console.WriteLine($"Found {users.Count} records to rewrap.");
+            await client.ReWrapRecords(users);
             Console.WriteLine($"Version: {v}");
         }
     }

@@ -69,12 +69,84 @@ namespace RewrapExample
                     $"\"{r.Location.Street}\", \"{r.Location.City}\", \"{r.Location.State}\", " +
                     $"\"{r.Location.Postcode}\", \"{r.Email}\", \"{r.DOB}\");";
                     
-                    Console.WriteLine(command);
                     cmd.CommandText = command;
 
                     var rowsAffected = await cmd.ExecuteNonQueryAsync();
-                    Console.WriteLine($"Created {rowsAffected} rows");
+                    //Console.WriteLine($"Created {rowsAffected} rows");
                 }
+            }
+        }
+        
+        // update encrypted fields with rewrapped data
+        public static async Task UpdateRecordAsyc(Record r)
+        {
+            using (var db = new AppDb())
+            {
+                await db.Connection.OpenAsync();
+                using (var cmd = db.Connection.CreateCommand())
+                {
+                    
+                    string command = "UPDATE `user_data` " + 
+                    $"SET `address` = \"{r.Location.Street}\", " +
+                    $"`dob` = \"{r.DOB}\", " +
+                    $"`email` = \"{r.Email}\" " +
+                    $"WHERE `user_id` = {r.Id.Value}";
+                    
+                    cmd.CommandText = command;
+
+                    var rowsAffected = cmd.ExecuteNonQueryAsync();
+                }
+            }
+        }
+
+        // Find records that need to be rewrapped
+        public static async Task<List<Record>> FindRecordsToRewrap(int keyVersion)
+        {
+            // select fields  that are encrypted
+            using (var db = new AppDb())
+            {
+                var users = new List<Record>();
+                await db.Connection.OpenAsync();
+                using (var cmd = db.Connection.CreateCommand())
+                {
+                    int count = 0;
+                    string command = "SELECT `user_id`, `email`,`dob`, `address` " +
+                    "FROM `user_data` " + 
+                    $"WHERE `dob` NOT LIKE \"vault:v{keyVersion}:%\" " +
+                    $"OR `email` NOT LIKE \"vault:v{keyVersion}:%\" " + 
+                    $"OR `address` NOT LIKE \"vault:v{keyVersion}:%\" ";
+                    
+
+                    cmd.CommandText = command;
+
+                    var reader = await cmd.ExecuteReaderAsync();
+                    
+                    while (reader.Read())
+                    {
+                        count++;
+                        var user_id = reader.GetInt32(0);
+                        var email = reader.GetString(1);
+                        var dob = reader.GetString(2);
+                        var address = reader.GetString(3);
+                        
+                        RewrapExample.Location addr = new Location();
+                        addr.Street = address;
+                        RewrapExample.Id id = new Id();
+                        id.Value = user_id.ToString();
+
+                        Record r = new Record
+                        {
+                            Id = id,
+                            DOB = dob,
+                            Email = email,
+                            Location = addr,
+                        };
+                        users.Add(r);
+                    }
+
+                    Console.WriteLine($"Found {count} rows to rewrap");
+                }
+                return users;
             }
         }
     }
