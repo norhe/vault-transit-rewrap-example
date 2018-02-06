@@ -143,8 +143,6 @@ namespace RewrapExample
                         };
                         users.Add(r);
                     }
-
-                    Console.WriteLine($"Found {count} rows to rewrap");
                 }
                 return users;
             }

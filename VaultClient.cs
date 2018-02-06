@@ -42,8 +42,6 @@ namespace RewrapExample
         // https://github.com/rajanadar/VaultSharp
         public async Task<string> ReWrapValue(string ciphertext)
         {
-            //Console.WriteLine($"Rewrapping {ciphertext}");
-            //var result = await client.TransitRewrapWithLatestEncryptionKeyAsync(transitKeyName, base64(ciphertext));
             var result = await client.TransitRewrapWithLatestEncryptionKeyAsync(transitKeyName, ciphertext);
             return result.Data.CipherText;
         }
