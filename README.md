@@ -12,9 +12,9 @@ The goal of this guide is to demonstrate one possible way to re-wrap data after 
 - [Docker](https://docs.docker.com/install/)
 
 ## Challenge
-Vault's transit engine, sometimes referred to as Encryption As A Service, encrypts data.  Applications can use Vault to encrypt and decrypt sensitive data.  Both small amounts of arbitrary data, and large files such as images, can be protected with the transit engine.  Transit can eliminate or augment TDE with databases, encrypt bucket contents, etc.  
+Vault's transit engine, sometimes referred to as Encryption As A Service, encrypts data.  Applications can use Vault to encrypt and decrypt sensitive data.  Both small amounts of arbitrary data, and large files such as images, can be protected with the transit engine.  Transit can augment or eliminate the need for TDE with databases, it can encrypt bucket/volume/disk contents, etc.  
 
-One of  the benefits of using EAAS with Vault is the ability to easily rotate keys.  Keys can be rotated by a human, or the process can be automated using cron, a CI pipeline, or some other tool to interact the key rotation API endpoint.  Each key has a version associated with it.  Vault maintains this versioned keyring, and the operator can decide what the minimum version allowed is for decryption operations.  When data is encrypted using Vault the resultant ciphertext is prepended with the version of key used to encrypt it.  The following example shows data that was encrypted using the fourth version of a particular key:
+One of  the benefits of using EAAS with Vault is the ability to easily rotate keys.  Keys can be rotated by a human, or the process can be automated using cron, a CI pipeline, a periodic Nomad batch job, Kubernetes Job, etc, to interact the key rotation API endpoint.  Each key has a version associated with it.  Vault maintains this versioned keyring, and the operator can decide what the minimum version allowed is for decryption operations.  When data is encrypted using Vault the resultant ciphertext is prepended with the version of key used to encrypt it.  The following example shows data that was encrypted using the fourth version of a particular key:
 ```
 vault:v4:ueizdCqCJ/YhowQSvmJyucnLfIUMd4S/nLTpGTcz64HXoY69dwOrqerFzOlhqg==
 ```
@@ -26,7 +26,7 @@ For example, an organization could decide that a key should be rotated once a we
 
 In this example what would happen if we sent Vault data encrypted with the first or second version of the key (vault:v1 or vault:v2:asdf==)?  Vault would refuse to decrypt the data as the key used is less than the minimum key version allowed.
 
-Luckily Vault provides an easy way of re-wrapping encrypted data when a key is rotated.  Using the rewrap API endpoint a non-priveleged Vault user can send data encrypted with an older version of the key to have it re-encrypted with the latest version.  The application performing the re-wrapping never interacts with the decrypted data.  The process of rolling the encryption key and rewrapping records could be completely automated.  Records could be updated slowly over time to lessen database load, or all at once at the time of rotation.  The exact implementation will depend heavily on the needs of each particular organization or application.
+Luckily Vault provides an easy way of re-wrapping encrypted data when a key is rotated.  Using the rewrap API endpoint a non-priveleged Vault entity can send data encrypted with an older version of the key to have it re-encrypted with the latest version.  The application performing the re-wrapping never interacts with the decrypted data.  The process of rolling the encryption key and rewrapping records could (and should) be completely automated.  Records could be updated slowly over time to lessen database load, or all at once at the time of rotation.  The exact implementation will depend heavily on the needs of each particular organization or application.
 
 The following application demonstrates one possible way of doing this.
 
